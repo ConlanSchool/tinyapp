@@ -9,6 +9,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+function generateRandomString() {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -31,7 +43,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.number("urls_new");
+  res.render("urls_new");
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -40,4 +52,9 @@ app.get("/urls/:id", (req, res) => {
     longURL: urlDatabase[req.params.id],
   };
   res.render("urls_show", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
