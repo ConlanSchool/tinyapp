@@ -68,3 +68,16 @@ app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
+
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const newURL = req.body.longURL;
+  urlDatabase[id] = newURL;
+  res.redirect("/urls");
+});
+
+app.post("/login", (req, res) => {
+  const { username } = req.body; // Get the value of the "username" field from the request body
+  res.cookie("username", username); // Set a cookie named "username" with the submitted value
+  res.redirect("/urls");
+});
