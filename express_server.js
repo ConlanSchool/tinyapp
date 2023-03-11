@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
 const { generateRandomString, checkEmail } = require("./helpers");
@@ -50,7 +51,7 @@ app.post("/register", (req, res) => {
   const newUser = {
     id: genID,
     email: email,
-    password: password,
+    password: bcrypt.hashSync(password, 11),
   };
 
   users[genID] = newUser;
@@ -80,7 +81,7 @@ app.post("/login", (req, res) => {
     return;
   }
 
-  if (password !== user.password) {
+  if (!bcrypt.compareSync(password, user.password)) {
     res.status(403).send("Incorrect password");
     return;
   }
