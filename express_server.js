@@ -1,19 +1,24 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const app = express();
 const PORT = 8080;
 const { generateRandomString, checkEmail } = require("./helpers");
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: "session",
+    keys: ["key1", "key2"],
+  })
+);
 
 const users = {};
 const urlDatabase = {};
 
 //Middleware to handle user
 app.use((req, res, next) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   const user = users[userId];
   req.user = user;
   next();
@@ -49,7 +54,7 @@ app.post("/register", (req, res) => {
   };
 
   users[genID] = newUser;
-  res.cookie("user_id", newUser.id);
+  req.session.user_id = newUser.id;
   res.redirect("/urls");
 });
 
@@ -80,13 +85,13 @@ app.post("/login", (req, res) => {
     return;
   }
 
+  req.session.user_id = user.id;
   res.redirect("/urls");
 });
 
 //Clears cookies on logout
 app.post("/logout", (req, res) => {
-  req.cookies = null;
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
@@ -109,7 +114,12 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: req.user };
+  if (!req.user) {
+    res.redirect("/login");
+    return;
+  }
+
+  const templateVars = { user: user };
   res.render("urls_new", templateVars);
 });
 
@@ -122,7 +132,17 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
+  if (!req.user) {
+    res.status(401).send("You need to be logged in to shorten URLs.");
+    return;
+  }
+
+  // process the POST request to shorten the URL
+  const shortURL = generateRandomString();
+  const longURL = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
+
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/u/:id", (req, res) => {
