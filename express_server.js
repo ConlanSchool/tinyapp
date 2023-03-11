@@ -2,7 +2,6 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080;
-<<<<<<< HEAD
 const { generateRandomString, checkEmail } = require("./helpers");
 
 app.set("view engine", "ejs");
@@ -52,39 +51,6 @@ app.post("/register", (req, res) => {
   users[genID] = newUser;
   res.cookie("user_id", newUser.id);
   res.redirect("/urls");
-=======
-const { generateRandomString } = require("./helpers");
-
-app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true }));
-
-const users = {};
-const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-};
-
-//
-//
-//
-
-app.post("/login", (req, res) => {
-  const { username } = req.body; // Get the value of the "username" field from the request body
-  res.cookie("username", username); // Set a cookie named "username" with the submitted value
-  res.redirect("/urls");
-});
-
-//
-//
-//
-
-app.get("/", (req, res) => {
-  if (req.user) {
-    res.redirect("/urls");
-  } else {
-    res.redirect("/login");
-  }
->>>>>>> b3e9ba38b34b1ea2adb8d34550a8bd13b26f5d10
 });
 
 //Login handlers
@@ -117,7 +83,6 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
-<<<<<<< HEAD
 //Clears cookies on logout
 app.post("/logout", (req, res) => {
   req.cookies = null;
@@ -140,11 +105,6 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = { user: req.user, urls: urlDatabase };
-=======
-app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
-  console.log(templateVars);
->>>>>>> b3e9ba38b34b1ea2adb8d34550a8bd13b26f5d10
   res.render("urls_index", templateVars);
 });
 
@@ -164,10 +124,6 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   console.log(req.body);
 });
-
-//
-//
-//
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
@@ -189,12 +145,8 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-<<<<<<< HEAD
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
 module.exports = { users };
-=======
-//module.exports = { users };
->>>>>>> b3e9ba38b34b1ea2adb8d34550a8bd13b26f5d10
