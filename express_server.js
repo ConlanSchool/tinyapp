@@ -2,10 +2,15 @@ const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
-const PORT = 8080;
 const { generateRandomString, checkEmail, urlsForUser } = require("./helpers");
+const PORT = 8080;
+const users = {};
+const urlDatabase = {};
 
+// EJS functionality
 app.set("view engine", "ejs");
+
+//Midware
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cookieSession({
@@ -14,10 +19,6 @@ app.use(
   })
 );
 
-const users = {};
-const urlDatabase = {};
-
-//Middleware to handle user
 app.use((req, res, next) => {
   const userId = req.session.user_id;
   const user = users[userId];
@@ -31,6 +32,7 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
+// Register input
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
 
@@ -65,6 +67,7 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
+// Login input
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -105,10 +108,12 @@ app.get("/", (req, res) => {
   }
 });
 
+//Loads the json
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// render the main page
 app.get("/urls", (req, res) => {
   if (!req.user) {
     const templateVars = {
@@ -124,6 +129,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// Display new url page
 app.get("/urls/new", (req, res) => {
   if (!req.user) {
     res.redirect("/login");
@@ -134,6 +140,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+// Main page functionality
 app.post("/urls", (req, res) => {
   if (!req.user) {
     res.status(401).send("You need to be logged in to shorten URLs.");
@@ -150,6 +157,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+// Checks if user owns the link
 app.get("/urls/:id", (req, res) => {
   const user = req.user;
   const id = req.params.id;
@@ -182,16 +190,25 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// Redirect to the long URL's site
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
+  const shortURL = req.params.id;
+  const url = urlDatabase[shortURL];
+
+  if (url) {
+    res.redirect(url.longURL);
+  } else {
+    res.status(404).send("URL not found");
+  }
 });
 
+// Delete button functionality
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
 
+// Edit link functionality
 app.post("/urls/:id", (req, res) => {
   const user = req.user;
   const shortURL = req.params.id;
@@ -211,9 +228,7 @@ app.post("/urls/:id", (req, res) => {
 
   // Check if user owns URL
   if (user.id !== urlDatabase[shortURL].userID) {
-    res.status(403).render("error", {
-      message: "You don't have permission to update this URL.",
-    });
+    res.status(403).send("You don't have permission to update this URL.");
     return;
   }
   // Generate a new shortURL
@@ -225,8 +240,6 @@ app.post("/urls/:id", (req, res) => {
     userID: user.id,
   };
   delete urlDatabase[shortURL];
-
-  console.log(urlDatabase);
   res.redirect("/urls");
 });
 

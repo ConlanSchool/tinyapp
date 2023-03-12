@@ -1,3 +1,4 @@
+//Random string generator
 function generateRandomString() {
   const chars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -8,6 +9,7 @@ function generateRandomString() {
   return result;
 }
 
+// Check if an email is registered
 function checkEmail(email, users) {
   for (const userId in users) {
     if (users[userId].email === email) {
@@ -17,6 +19,7 @@ function checkEmail(email, users) {
   return null;
 }
 
+// Make urls user specific
 function urlsForUser(id, urlDatabase) {
   if (!urlDatabase) {
     return {};
