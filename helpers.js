@@ -1,5 +1,3 @@
-const { users, urlDatabase } = require("./express_server");
-
 function generateRandomString() {
   const chars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -19,7 +17,10 @@ function checkEmail(email, users) {
   return null;
 }
 
-function urlsForUser(id) {
+function urlsForUser(id, urlDatabase) {
+  if (!urlDatabase) {
+    return {};
+  }
   const userURLs = {};
   for (const shortURL in urlDatabase) {
     const url = urlDatabase[shortURL];

@@ -111,13 +111,16 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!req.user) {
-    const templateVars = { user: req.user };
+    const templateVars = {
+      user: req.user,
+      error: "Please log in or register to see your URLs.",
+    };
     res.status(401).render("login", templateVars);
     return;
   }
-
   const userUrls = urlsForUser(req.user.id, urlDatabase);
   const templateVars = { user: req.user, urls: userUrls };
+
   res.render("urls_index", templateVars);
 });
 
@@ -137,18 +140,20 @@ app.post("/urls", (req, res) => {
     return;
   }
 
-  // process the POST request to shorten the URL
+  // Generate a short URL and save it to the database
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  const userID = req.user.id;
+  urlDatabase[shortURL] = { longURL: longURL, userID: userID };
 
+  // Redirect to the newly saved URL
   res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/:id", (req, res) => {
   const user = req.user;
-  const shortURL = req.params.id;
-  const longURL = urlDatabase[shortURL];
+  const id = req.params.id;
+  const url = urlDatabase[id];
 
   // Check if user is logged in
   if (!user) {
@@ -157,20 +162,20 @@ app.get("/urls/:id", (req, res) => {
   }
 
   // Check if URL exists
-  if (!longURL) {
+  if (!url) {
     res.status(404).send("URL not found.");
     return;
   }
 
   // Check if user owns URL
-  if (user.id !== urlDatabase[shortURL].user_id) {
+  if (user.id !== url.userID) {
     res.status(403).send("You don't have permission to view this URL.");
     return;
   }
 
   const templateVars = {
-    id: shortURL,
-    longURL: longURL,
+    id: id,
+    longURL: url.longURL,
     user: user,
   };
 
@@ -188,17 +193,43 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const newURL = req.body.longURL;
-  const newShort = generateRandomString();
+  const user = req.user;
+  const shortURL = req.params.id;
+  const newlongURL = req.body.longURL;
 
-  urlDatabase[newShort] = newURL;
-  delete urlDatabase[req.params.id];
+  // Check if user is logged in
+  if (!user) {
+    res.status(401).send("You must be logged in to edit URLs");
+    return;
+  }
 
+  // Check if URL exists
+  if (!urlDatabase[shortURL]) {
+    res.status(404).send("URL not found");
+    return;
+  }
+
+  // Check if user owns URL
+  if (user.id !== urlDatabase[shortURL].userID) {
+    res.status(403).render("error", {
+      message: "You don't have permission to update this URL.",
+    });
+    return;
+  }
+  // Generate a new shortURL
+  const newShortURL = generateRandomString();
+
+  // Update the URL in the database
+  urlDatabase[newShortURL] = {
+    longURL: newlongURL,
+    userID: user.id,
+  };
+  delete urlDatabase[shortURL];
+
+  console.log(urlDatabase);
   res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-module.exports = { users, urlDatabase };
