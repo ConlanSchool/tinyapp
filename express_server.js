@@ -3,7 +3,7 @@ const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;
-const { generateRandomString, checkEmail } = require("./helpers");
+const { generateRandomString, checkEmail, urlsForUser } = require("./helpers");
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
@@ -98,7 +98,7 @@ app.post("/logout", (req, res) => {
 
 //Redirects from default route
 app.get("/", (req, res) => {
-  if (req.users) {
+  if (req.user) {
     res.redirect("/urls");
   } else {
     res.redirect("/login");
@@ -110,7 +110,14 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { user: req.user, urls: urlDatabase };
+  if (!req.user) {
+    const templateVars = { user: req.user };
+    res.status(401).render("login", templateVars);
+    return;
+  }
+
+  const userUrls = urlsForUser(req.user.id, urlDatabase);
+  const templateVars = { user: req.user, urls: userUrls };
   res.render("urls_index", templateVars);
 });
 
@@ -120,16 +127,8 @@ app.get("/urls/new", (req, res) => {
     return;
   }
 
-  const templateVars = { user: user };
+  const templateVars = { user: req.user };
   res.render("urls_new", templateVars);
-});
-
-app.get("/urls/:id", (req, res) => {
-  const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id],
-  };
-  res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -144,6 +143,38 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = longURL;
 
   res.redirect(`/urls/${shortURL}`);
+});
+
+app.get("/urls/:id", (req, res) => {
+  const user = req.user;
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL];
+
+  // Check if user is logged in
+  if (!user) {
+    res.status(401).send("You need to be logged in to view this page.");
+    return;
+  }
+
+  // Check if URL exists
+  if (!longURL) {
+    res.status(404).send("URL not found.");
+    return;
+  }
+
+  // Check if user owns URL
+  if (user.id !== urlDatabase[shortURL].user_id) {
+    res.status(403).send("You don't have permission to view this URL.");
+    return;
+  }
+
+  const templateVars = {
+    id: shortURL,
+    longURL: longURL,
+    user: user,
+  };
+
+  res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
@@ -170,4 +201,4 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-module.exports = { users };
+module.exports = { users, urlDatabase };

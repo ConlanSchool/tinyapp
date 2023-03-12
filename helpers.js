@@ -1,4 +1,4 @@
-const { users } = require("./express_server");
+const { users, urlDatabase } = require("./express_server");
 
 function generateRandomString() {
   const chars =
@@ -19,4 +19,15 @@ function checkEmail(email, users) {
   return null;
 }
 
-module.exports = { generateRandomString, checkEmail };
+function urlsForUser(id) {
+  const userURLs = {};
+  for (const shortURL in urlDatabase) {
+    const url = urlDatabase[shortURL];
+    if (url.userID === id) {
+      userURLs[shortURL] = url;
+    }
+  }
+  return userURLs;
+}
+
+module.exports = { generateRandomString, checkEmail, urlsForUser };
